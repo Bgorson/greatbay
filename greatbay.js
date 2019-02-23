@@ -10,7 +10,7 @@ var connection = mysql.createConnection({
   user: "root",
 
   // Your password
-  password: "fenrir32",
+  password: "",
   database: "greatbayDB"
 });
 
@@ -22,7 +22,7 @@ inquirer.prompt([{
   }])
   .then(function (response) {
     if (response.userAction == 'Post') {
-      console.log("Ryan and Mike's code here")
+      postItems();
     }
     if (response.userAction == "Bid") {
       connection.connect(function (err) {
@@ -35,13 +35,13 @@ inquirer.prompt([{
     }
   })
 
-
+var highest;
+var itemBid;
 
 function viewItems() {
   connection.query("SELECT * FROM items", function (err, res) {
     if (err) throw err;
     var itemArray = [];
-    console.log("this is res" + res[0].item_name)
     for (i = 0; i < res.length; i++) {
       itemArray.push(res[i].item_name)
     }
@@ -52,41 +52,37 @@ function viewItems() {
       name: "itemChoice"
 
     }]).then(function (response) {
+      itemBid= response.itemChoice
+      highest= res[0].highest_bid
+      console.log(highest)
+      console.log("You picked "+ itemBid)
 
-      bidItems(response.itemChoice)
+      bidItems(itemBid,highest)
     })
   });
 }
-var highest;
-var itemBid;
-function bidItems(item) {
-  itemBid=item
-  connection.query("SELECT * FROM items WHERE?", {
-    item_name : item
-  }, function (err, res) {
-    if (err) throw err;
-    highest= parseInt(res[0].highest_bid)
-    console.log("This should be highestBid"+ res[0].highest_bid);
-  });
 
+function bidItems(item,itemHighest) {
+
+  console.log("This should be highest Bid "+ itemHighest);
   console.log("You're bidding on " + item)
   inquirer.prompt([{
     type: "input",
     message: "how much do you want to bid?",
     name: "bid"
   }]).then(function (response) {
-    if (parseInt(response.bid) > highest) {
+    if (parseInt(response.bid) > itemHighest) {
       connection.query(
         "UPDATE items SET ? WHERE ?",
         [{
-            highest_bid: highest
+            highest_bid: response.bid
           },
           {
-            item_name: itemBid
+            item_name: item
           }
         ],
         function (err, res) {
-          console.log("You got the highest bid on" + res.item_name);
+          console.log("You got the highest bid on" + item);
           // Call deleteProduct AFTER the UPDATE completes
 
         }
@@ -97,4 +93,40 @@ function bidItems(item) {
     connection.end();
   })
 
+}
+function postItems() {
+  inquirer.prompt([
+    {
+      type:"input",
+      message:"What item do you want to list?",
+      name: "name"
+    },
+    {
+      type:"input",
+      message:"What is the starting bid?",
+      name: "bid"
+    },
+    {
+    type:"input",
+    message: "what category is this item in?",
+    name: "category"
+    }
+  ]).then(function(response){
+    createListing(response.category,response.name,response.bid)
+})
+}
+function createListing(category,name,bid) {
+  console.log("Inserting a new item...\n");
+  connection.query(
+    //replaces the ? with the object identified afterwards
+    "INSERT INTO items SET ?",
+    {
+      item_name: name,
+      category: category,
+      highest_bid:bid,
+      starting_bid:bid
+    }
+  );
+
+  connection.end();
 }
