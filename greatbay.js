@@ -33,6 +33,7 @@ function initialize(){
 })
 }
 
+
 function accountCreate(){
   inquirer.prompt([{
     type: "input",
@@ -108,11 +109,11 @@ inquirer.prompt([{
   .then(function (response) {
     if (response.userAction == 'Post') {
       console.log("connected as id " + connection.threadId + "\n");
-      postItems();
+      postItems(user);
     }
     if (response.userAction == "Bid") {
         console.log("connected as id " + connection.threadId + "\n");
-        viewItems();
+        viewItems(user);
       };
     
     if (response.userAction == "Remove"){
@@ -124,7 +125,7 @@ inquirer.prompt([{
     }
   })
 }
-function viewItems() {
+function viewItems(user) {
   connection.query("SELECT * FROM items", function (err, res) {
     if (err) throw err;
     
@@ -145,12 +146,12 @@ function viewItems() {
       connection.query("SELECT * FROM items WHERE?",{
         item_name: response.itemChoice
       }, function (err, res) {
-        bidItems(response.itemChoice, res[0].highest_bid)
+        bidItems(response.itemChoice, res[0].highest_bid,user)
       })
     })
   });
 }
-function bidItems(item, itemHighest) {
+function bidItems(item, itemHighest,user) {
 
   console.log("This should be highest Bid " + itemHighest);
   console.log("You're bidding on " + item)
@@ -167,6 +168,9 @@ function bidItems(item, itemHighest) {
           },
           {
             item_name: item
+          },
+          {
+          createdby:user
           }
         ],
         function (err, res) {
@@ -180,7 +184,7 @@ function bidItems(item, itemHighest) {
   })
 
 }
-function postItems() {
+function postItems(user) {
   inquirer.prompt([{
       type: "input",
       message: "What item do you want to list?",
@@ -197,17 +201,18 @@ function postItems() {
       name: "category"
     }
   ]).then(function (response) {
-    createListing(response.category, response.name, response.bid)
+    createListing(response.category, response.name, response.bid,user)
   })
 }
-function createListing(category, name, bid) {
+function createListing(category, name, bid,user) {
   console.log("Inserting a new item...\n");
   connection.query(
     "INSERT INTO items SET ?", {
       item_name: name,
       category: category,
       highest_bid: bid,
-      starting_bid: bid
+      starting_bid: bid,
+      createdby:user      
     }
   );
   connection.end();
