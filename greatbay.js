@@ -11,7 +11,7 @@ const connection = mysql.createConnection({
 
   // Your password
   password: "",
-  database: "greatbayDB"
+  database: "greatbaydb"
 });
 
 function initialize(){
@@ -34,7 +34,6 @@ function initialize(){
 }
 
 function accountCreate(){
-  console.log("pending functionality")
   inquirer.prompt([{
     type: "input",
     message: "What is your username?",
@@ -77,18 +76,29 @@ function login(){
     connection.query(
       "select userPassword from usernames WHERE ?", {
       userName: response.user
-      },function (err, res){   
+      },function (err, res){  
+        try {          
         if (res[0].userPassword== response.password){
           console.log("Success!")
-          loginSuccess()
+          loginSuccess(response.user)
         }
+        else {
+          console.log("Incorrect Password")
+          login();
+        }
+      }
 
+      catch(err){ console.log("That username does not exist")
+      login();
+    }
+     
+   
       })
   })
 }
 
-function loginSuccess() {
-
+function loginSuccess(user) {
+console.log("Hello "+ user)
 inquirer.prompt([{
     type: "list",
     message: "Which do you want to do?",
@@ -101,12 +111,10 @@ inquirer.prompt([{
       postItems();
     }
     if (response.userAction == "Bid") {
-      connection.connect(function (err) {
-        if (err) throw err;
         console.log("connected as id " + connection.threadId + "\n");
         viewItems();
-      });
-    }
+      };
+    
     if (response.userAction == "Remove"){
       console.log("connected as id " + connection.threadId + "\n");
       deleteItems();
